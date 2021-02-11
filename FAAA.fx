@@ -1,11 +1,11 @@
 /*============================================================================
 
-                    NVIDIA FXAA 3.11 by TIMOTHY LOTTES
-						
-				 MODIFIED VERSION by G.Rebord for RESHADE
-
-------------------------------------------------------------------------------
-COPYRIGHT (C) 2010, 2011 NVIDIA CORPORATION. ALL RIGHTS RESERVED.
+		FAAA - Antialiasing shader for Reshade
+				by G.Rebord
+				
+		based on NVIDIA FXAA 3.11 by TIMOTHY LOTTES,
+		COPYRIGHT (C) 2010, 2011 NVIDIA CORPORATION.
+		
 ------------------------------------------------------------------------------
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED
 *AS IS* AND NVIDIA AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES, EITHER EXPRESS
@@ -21,16 +21,16 @@ DAMAGES.
 
 namespace FXAA {
 /*============================================================================
-								 SETTINGS
+		SETTINGS
 ============================================================================*/
 #ifndef FXAA_EDGE_THRESHOLD
-    // Edge detection threshold. Higher values result in more edges being
+	// Edge detection threshold. Higher values result in more edges being
 	// detected and smoothed. Range: 1.0 to 9.0. Default: 5.0 (thorough)
 	#define FXAA_EDGE_THRESHOLD 5.0
 #endif
 /*--------------------------------------------------------------------------*/
 #ifndef FXAA_QUALITY
-    // Antialiasing quality setting. Higher values result in higher quality
+	// Antialiasing quality setting. Higher values result in higher quality
 	// of antialiasing applied to detected edges. Default: 5 (high quality)
 	// Range: From 1 (fastest) to 9 (highest quality).
     #define FXAA_QUALITY 5
@@ -42,12 +42,12 @@ namespace FXAA {
 #endif
 
 /*============================================================================
-							  LUMA COMPUTATION
+		LUMA COMPUTATION
 ============================================================================*/
 #define FXAA_COMPUTE_LUMA 1	 // 1: compute luma - 0: get luma from A channel.
 
 /*============================================================================
-							      SETUP
+		SETUP
 ============================================================================*/
 texture BackBufferTex : COLOR;
 sampler BackBuffer
@@ -60,17 +60,17 @@ sampler BackBuffer
 static const float2 PixelSize = float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT);
 static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 /*--------------------------------------------------------------------------*/
-#define tsp(p) 						float4(p, 0.0, 0.0)
+#define tsp(p) 					float4(p, 0.0, 0.0)
 #define SampleColor(p)				tex2Dlod(BackBuffer, tsp(p))
 /*--------------------------------------------------------------------------*/
 #if FXAA_COMPUTE_LUMA
-	#define Edges					float3(0,1,0)
-	#define GetLuma(c)				dot(c, float3(0.299, 0.587, 0.114))
-	#define SampleLuma(p)			GetLuma(tex2Dlod(BackBuffer, tsp(p)).rgb)
+	#define Edges			float3(0,1,0)
+	#define GetLuma(c)		dot(c, float3(0.299, 0.587, 0.114))
+	#define SampleLuma(p)		GetLuma(tex2Dlod(BackBuffer, tsp(p)).rgb)
 #define SampleLumaOff(p, o)	GetLuma(tex2Dlodoffset(BackBuffer, tsp(p), o).rgb)
 /*--------------------------------------------------------------------------*/
 #else
-	#define Edges					float4(0,1,0,lumaM)
+	#define Edges				float4(0,1,0,lumaM)
 	#define SampleLuma(p)			tex2Dlod(BackBuffer, tsp(p)).w
 	#define SampleLumaOff(p, o)		tex2Dlodoffset(BackBuffer, tsp(p), o).w
 	#if (__RENDERER__ == 0xb000 || __RENDERER__ == 0xb100)
@@ -90,7 +90,7 @@ static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 #define OffNW  int2(-1,-1)
 
 /*============================================================================
-				FXAA3 QUALITY VERSION LOW DITHER SETTINGS
+	Settings - from FXAA3 QUALITY VERSION LOW DITHER SETTINGS
 ============================================================================*/
 #if (FXAA_QUALITY == 1)
 	#define FXAA_QUALITY__PI  4
@@ -181,7 +181,7 @@ static const float OffMult[12] = { FXAA_QUALITY__P0, FXAA_QUALITY__P1,
 	FXAA_QUALITY__P10, FXAA_QUALITY__P11 };
 	
 /*============================================================================
-								SHADERS
+	SHADERS
 ============================================================================*/
 void FXAAVS(in uint id : SV_VertexID,
 	out float4 pos : SV_Position, out float2 txc : TEXCOORD){
@@ -213,11 +213,11 @@ void FXAAVS(in uint id : SV_VertexID,
 /*----------------------------------------------------------------------------
 	Edge detection. This does much better than a head-on luma delta.
 ----------------------------------------------------------------------------*/
-    float gradientSWNE = lumaSW - lumaNE;
+	float gradientSWNE = lumaSW - lumaNE;
 	float gradientSENW = lumaSE - lumaNW;
 	float2 dirM;
-    dirM.x = abs(gradientSWNE + gradientSENW);
-    dirM.y = abs(gradientSWNE - gradientSENW);
+	dirM.x = abs(gradientSWNE + gradientSENW);
+	dirM.y = abs(gradientSWNE - gradientSENW);
 /*--------------------------------------------------------------------------*/
 	float lumaMax = max(max(lumaSW, lumaSE), max(lumaNE, lumaNW));
 	float localLumaFactor = lumaMax * 0.5 + 0.5;
@@ -240,7 +240,7 @@ void FXAAVS(in uint id : SV_VertexID,
 	float lumaN = lumaDN.z;
 	float lumaS = lumaDP.x;
 	if(!horzSpan) lumaN = lumaDN.x;
-    if(!horzSpan) lumaS = lumaDP.z;
+	if(!horzSpan) lumaS = lumaDP.z;
 /*--------------------------------------------------------------------------*/
 #else
 	float lumaM = SampleLuma(txc);
@@ -248,31 +248,31 @@ void FXAAVS(in uint id : SV_VertexID,
 	if( horzSpan) lumaN = SampleLumaOff(txc, OffN);
 	if( horzSpan) lumaS = SampleLumaOff(txc, OffS);
 	if(!horzSpan) lumaN = SampleLumaOff(txc, OffW);
-    if(!horzSpan) lumaS = SampleLumaOff(txc, OffE);
+	if(!horzSpan) lumaS = SampleLumaOff(txc, OffE);
 #endif
 /*--------------------------------------------------------------------------*/
-    float gradientN = lumaN - lumaM;
-    float gradientS = lumaS - lumaM;
+	float gradientN = lumaN - lumaM;
+	float gradientS = lumaS - lumaM;
 /*--------------------------------------------------------------------------*/
-    bool pairN = abs(gradientN) > abs(gradientS);
+	bool pairN = abs(gradientN) > abs(gradientS);
 /*--------------------------------------------------------------------------*/
 	float gradient = abs(gradientN);
 	if(!pairN) gradient = abs(gradientS);
 	float gradientScaled = gradient * 0.25;
 /*--------------------------------------------------------------------------*/
 	float lumaNN = lumaN + lumaM;
-    if(!pairN) lumaNN = lumaS + lumaM;
+	if(!pairN) lumaNN = lumaS + lumaM;
 	float lumaMN = lumaNN * 0.5;
 /*--------------------------------------------------------------------------*/
 	float lengthSign = PixelSize.y;
-    if(!horzSpan) lengthSign = PixelSize.x;
+	if(!horzSpan) lengthSign = PixelSize.x;
 	if( pairN) lengthSign = -lengthSign;
 /*--------------------------------------------------------------------------*/
     float2 posN = txc;
 	if(!horzSpan) posN.x += lengthSign * 0.5;
-    if( horzSpan) posN.y += lengthSign * 0.5;
+	if( horzSpan) posN.y += lengthSign * 0.5;
 	float2 posP = posN;
-    float2 offNP = PixelSize;
+	float2 offNP = PixelSize;
 	if(!horzSpan) offNP.x = 0;
 	if( horzSpan) offNP.y = 0;
 /*--------------------------------------------------------------------------*/
@@ -306,10 +306,10 @@ void FXAAVS(in uint id : SV_VertexID,
 	}
 /*--------------------------------------------------------------------------*/
 	float2 posM = txc;
-    float dstN = posM.x - posN.x;
-    float dstP = posP.x - posM.x;
-    if(!horzSpan) dstN = posM.y - posN.y;
-    if(!horzSpan) dstP = posP.y - posM.y;
+	float dstN = posM.x - posN.x;
+	float dstP = posP.x - posM.x;
+	if(!horzSpan) dstN = posM.y - posN.y;
+	if(!horzSpan) dstP = posP.y - posM.y;
 /*--------------------------------------------------------------------------*/
 	bool dstNLTdstP = dstN < dstP;
 	bool lumaMLTZero = lumaM - lumaMN < 0;
@@ -318,15 +318,15 @@ void FXAAVS(in uint id : SV_VertexID,
 /*--------------------------------------------------------------------------*/
 	float dst = dstNLTdstP ? dstN : dstP;
 	float spanLength = dstP + dstN;
-    float pixelOffset = (-dst / spanLength) + 0.5;
+	float pixelOffset = (-dst / spanLength) + 0.5;
 /*--------------------------------------------------------------------------*/
 	bool pixelOffsetLTZero = pixelOffset < 0;
 	if(pixelOffsetLTZero || !goodSpan) discard;
 /*--------------------------------------------------------------------------*/
-    if(!horzSpan) posM.x += pixelOffset * lengthSign;
-    if( horzSpan) posM.y += pixelOffset * lengthSign;
+	if(!horzSpan) posM.x += pixelOffset * lengthSign;
+	if( horzSpan) posM.y += pixelOffset * lengthSign;
 /*--------------------------------------------------------------------------*/
-    return SampleColor(posM)
+	return SampleColor(posM)
 #if FXAA_COMPUTE_LUMA
 	.rgb;
 #else
@@ -337,13 +337,13 @@ void FXAAVS(in uint id : SV_VertexID,
 technique FXAA
 <
 	ui_tooltip = 	"Welcome to FXAA!\n"
-					"Settings:\n"
-					"---------\n"
-					"FXAA_EDGE_THRESHOLD : Edge detection level.\n"
-					"    High is thorough, low is sparse.\n"
-					"    Range: [1.0;9.0] Default: 5.0 (thorough)\n"
-					"FXAA_QUALITY : AA quality level.\n"
-					"    Range: [1;9] Default: 5 (high quality)\n";
+			"Settings:\n"
+			"---------\n"
+			"FXAA_EDGE_THRESHOLD : Edge detection level.\n"
+			"    High is thorough, low is sparse.\n"
+			"    Range: [1.0;9.0] Default: 5.0 (thorough)\n"
+			"FXAA_QUALITY : AA quality level.\n"
+			"    Range: [1;9] Default: 5 (high quality)\n";
 >
 {
 	pass {
