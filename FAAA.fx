@@ -195,7 +195,7 @@ void FXAAVS(in uint id : SV_VertexID,
 #else
 	float4 FXAAPS
 #endif
-(float4 pos : SV_Position, noperspective float2 txc : TEXCOORD) : SV_Target
+(float4 pos : SV_Position, float2 txc : TEXCOORD) : SV_Target
 {
 /*--------------------------------------------------------------------------*/
 #if FXAA_GATHER
@@ -334,9 +334,9 @@ void FXAAVS(in uint id : SV_VertexID,
 #endif
 }
 /*==========================================================================*/
-technique FXAA
+technique FAAA
 <
-	ui_tooltip = 	"Welcome to FXAA!\n"
+	ui_tooltip = 	"Welcome to FAAA!\n"
 			"Settings:\n"
 			"---------\n"
 			"FXAA_EDGE_THRESHOLD : Edge detection level.\n"
