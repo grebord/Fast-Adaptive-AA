@@ -44,7 +44,9 @@ namespace FXAA {
 /*============================================================================
 		LUMA COMPUTATION
 ============================================================================*/
-#define FXAA_COMPUTE_LUMA 1	 // 1: compute luma - 0: get luma from A channel.
+#ifndef FXAA_COMPUTE_LUMA
+	#define FXAA_COMPUTE_LUMA 1	 // 1: compute luma - 0: get luma from A channel.
+#endif
 
 /*============================================================================
 		SETUP
@@ -70,7 +72,7 @@ static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 #define SampleLumaOff(p, o)	GetLuma(tex2Dlodoffset(BackBuffer, tsp(p), o).rgb)
 /*--------------------------------------------------------------------------*/
 #else
-	#define Edges				float4(0,1,0,lumaM)
+	#define Edges				float4(0,1,0,SampleLuma(txc))
 	#define SampleLuma(p)			tex2Dlod(BackBuffer, tsp(p)).w
 	#define SampleLumaOff(p, o)		tex2Dlodoffset(BackBuffer, tsp(p), o).w
 	#if (__RENDERER__ == 0xb000 || __RENDERER__ == 0xb100)
