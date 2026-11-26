@@ -67,14 +67,12 @@ static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 /*--------------------------------------------------------------------------*/
 #if FXAA_COMPUTE_LUMA
 	#define Edges			float3(0,1,0)
-	#define DebugLumaScale		0.9
 	#define GetLuma(c)		dot(c, float3(0.299, 0.587, 0.114))
 	#define SampleLuma(p)		GetLuma(tex2Dlod(BackBuffer, tsp(p)).rgb)
 #define SampleLumaOff(p, o)	GetLuma(tex2Dlodoffset(BackBuffer, tsp(p), o).rgb)
 /*--------------------------------------------------------------------------*/
 #else
 	#define Edges				float4(0,1,0,SampleLuma(txc))
-	#define DebugLumaScale			float4(0.9,0.9,0.9,1.0)
 	#define SampleLuma(p)			tex2Dlod(BackBuffer, tsp(p)).w
 	#define SampleLumaOff(p, o)		tex2Dlodoffset(BackBuffer, tsp(p), o).w
 	#if (__RENDERER__ == 0xb000 || __RENDERER__ == 0xb100)
@@ -229,7 +227,7 @@ void FXAAVS(in uint id : SV_VertexID,
 	bool lowDelta = abs(dirM.x - dirM.y) < localThres;
 /*--------------------------------------------------------------------------*/
 #if FXAA_SHOW_EDGES
-	if(lowDelta) return SampleLuma(txc) * DebugLumaScale;
+	if(lowDelta) return SampleLuma(txc) * 0.9;
 	else return Edges;
 #else
 	if(lowDelta) discard;
