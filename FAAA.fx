@@ -44,7 +44,9 @@ namespace FXAA {
 /*============================================================================
 		LUMA COMPUTATION
 ============================================================================*/
-#define FXAA_COMPUTE_LUMA 1	 // 1: compute luma - 0: get luma from A channel.
+#ifndef FXAA_COMPUTE_LUMA
+	#define FXAA_COMPUTE_LUMA 1	 // 1: compute luma - 0: get luma from A channel.
+#endif
 
 /*============================================================================
 		SETUP
@@ -64,13 +66,11 @@ static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 #define SampleColor(p)				tex2Dlod(BackBuffer, tsp(p))
 /*--------------------------------------------------------------------------*/
 #if FXAA_COMPUTE_LUMA
-	#define Edges			float3(0,1,0)
 	#define GetLuma(c)		dot(c, float3(0.299, 0.587, 0.114))
 	#define SampleLuma(p)		GetLuma(tex2Dlod(BackBuffer, tsp(p)).rgb)
 #define SampleLumaOff(p, o)	GetLuma(tex2Dlodoffset(BackBuffer, tsp(p), o).rgb)
 /*--------------------------------------------------------------------------*/
 #else
-	#define Edges				float4(0,1,0,lumaM)
 	#define SampleLuma(p)			tex2Dlod(BackBuffer, tsp(p)).w
 	#define SampleLumaOff(p, o)		tex2Dlodoffset(BackBuffer, tsp(p), o).w
 	#if (__RENDERER__ == 0xb000 || __RENDERER__ == 0xb100)
@@ -225,11 +225,20 @@ void FXAAVS(in uint id : SV_VertexID,
 	bool lowDelta = abs(dirM.x - dirM.y) < localThres;
 /*--------------------------------------------------------------------------*/
 #if FXAA_SHOW_EDGES
+#if FXAA_COMPUTE_LUMA
 	if(lowDelta) return SampleLuma(txc) * 0.9;
-	else return Edges;
+	return float3(0, 1, 0);
+#else
+#if FXAA_GATHER
+	float debugLuma = lumaDP.w;
+#else
+	float debugLuma = SampleLuma(txc);
+#endif
+	if(lowDelta) return float4((debugLuma * 0.9).xxx, debugLuma);
+	return float4(0, 1, 0, debugLuma);
+#endif
 #else
 	if(lowDelta) discard;
-#endif
 /*============================================================================
 	Start!
 ----------------------------------------------------------------------------*/
@@ -332,6 +341,7 @@ void FXAAVS(in uint id : SV_VertexID,
 #else
 	;
 #endif
+#endif // FXAA_SHOW_EDGES
 }
 /*==========================================================================*/
 technique FAAA
