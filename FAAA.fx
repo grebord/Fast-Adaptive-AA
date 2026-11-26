@@ -62,13 +62,11 @@ static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 /*--------------------------------------------------------------------------*/
 #define tsp(p) 					float4(p, 0.0, 0.0)
 #define SampleColor(p)				tex2Dlod(BackBuffer, tsp(p))
-/*--------------------------------------------------------------------------*/
 #if FXAA_COMPUTE_LUMA
 	#define Edges			float3(0,1,0)
 	#define GetLuma(c)		dot(c, float3(0.299, 0.587, 0.114))
 	#define SampleLuma(p)		GetLuma(tex2Dlod(BackBuffer, tsp(p)).rgb)
 #define SampleLumaOff(p, o)	GetLuma(tex2Dlodoffset(BackBuffer, tsp(p), o).rgb)
-/*--------------------------------------------------------------------------*/
 #else
 	#define Edges				float4(0,1,0,lumaM)
 	#define SampleLuma(p)			tex2Dlod(BackBuffer, tsp(p)).w
@@ -140,7 +138,6 @@ static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 /*--------------------------------------------------------------------------*/
 #define FXAA_QUALITY__P0  1.0
 #define FXAA_QUALITY__P11 8.0
-/*--------------------------------------------------------------------------*/
 #if !defined FXAA_QUALITY__PI
 	#define  FXAA_QUALITY__PI  12
 #endif
@@ -197,7 +194,6 @@ void FXAAVS(in uint id : SV_VertexID,
 #endif
 (float4 pos : SV_Position, float2 txc : TEXCOORD) : SV_Target
 {
-/*--------------------------------------------------------------------------*/
 #if FXAA_GATHER
 	float4 lumaDP = GatherLuma(txc);
 	float4 lumaDN = GatherLumaOff(txc, OffNW);
@@ -207,7 +203,6 @@ void FXAAVS(in uint id : SV_VertexID,
 	float lumaSE = SampleLumaOff(txc, OffSE);
 	float lumaNW = SampleLumaOff(txc, OffNW);
 #endif
-/*--------------------------------------------------------------------------*/
 	float lumaSW = SampleLumaOff(txc, OffSW);
 	float lumaNE = SampleLumaOff(txc, OffNE);
 /*----------------------------------------------------------------------------
@@ -234,14 +229,12 @@ void FXAAVS(in uint id : SV_VertexID,
 	Start!
 ----------------------------------------------------------------------------*/
 	bool horzSpan = dirM.x > dirM.y;
-/*--------------------------------------------------------------------------*/
 #if FXAA_GATHER
 	float lumaM = lumaDP.w;
 	float lumaN = lumaDN.z;
 	float lumaS = lumaDP.x;
 	if(!horzSpan) lumaN = lumaDN.x;
 	if(!horzSpan) lumaS = lumaDP.z;
-/*--------------------------------------------------------------------------*/
 #else
 	float lumaM = SampleLuma(txc);
 	float lumaN, lumaS;
@@ -253,13 +246,10 @@ void FXAAVS(in uint id : SV_VertexID,
 /*--------------------------------------------------------------------------*/
 	float gradientN = lumaN - lumaM;
 	float gradientS = lumaS - lumaM;
-/*--------------------------------------------------------------------------*/
 	bool pairN = abs(gradientN) > abs(gradientS);
-/*--------------------------------------------------------------------------*/
 	float gradient = abs(gradientN);
 	if(!pairN) gradient = abs(gradientS);
 	float gradientScaled = gradient * 0.25;
-/*--------------------------------------------------------------------------*/
 	float lumaNN = lumaN + lumaM;
 	if(!pairN) lumaNN = lumaS + lumaM;
 	float lumaMN = lumaNN * 0.5;
@@ -267,7 +257,6 @@ void FXAAVS(in uint id : SV_VertexID,
 	float lengthSign = PixelSize.y;
 	if(!horzSpan) lengthSign = PixelSize.x;
 	if( pairN) lengthSign = -lengthSign;
-/*--------------------------------------------------------------------------*/
     float2 posN = txc;
 	if(!horzSpan) posN.x += lengthSign * 0.5;
 	if( horzSpan) posN.y += lengthSign * 0.5;
@@ -310,7 +299,6 @@ void FXAAVS(in uint id : SV_VertexID,
 	float dstP = posP.x - posM.x;
 	if(!horzSpan) dstN = posM.y - posN.y;
 	if(!horzSpan) dstP = posP.y - posM.y;
-/*--------------------------------------------------------------------------*/
 	bool dstNLTdstP = dstN < dstP;
 	bool lumaMLTZero = lumaM - lumaMN < 0;
 	bool mSpanLTZero = dstNLTdstP ? lumaEndN < 0 : lumaEndP < 0;
@@ -319,13 +307,11 @@ void FXAAVS(in uint id : SV_VertexID,
 	float dst = dstNLTdstP ? dstN : dstP;
 	float spanLength = dstP + dstN;
 	float pixelOffset = (-dst / spanLength) + 0.5;
-/*--------------------------------------------------------------------------*/
 	bool pixelOffsetLTZero = pixelOffset < 0;
 	if(pixelOffsetLTZero || !goodSpan) discard;
 /*--------------------------------------------------------------------------*/
 	if(!horzSpan) posM.x += pixelOffset * lengthSign;
 	if( horzSpan) posM.y += pixelOffset * lengthSign;
-/*--------------------------------------------------------------------------*/
 	return SampleColor(posM)
 #if FXAA_COMPUTE_LUMA
 	.rgb;
