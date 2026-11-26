@@ -190,7 +190,7 @@ void FXAAVS(in uint id : SV_VertexID,
 	pos = float4(txc * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
 }
 /*==========================================================================*/
-#if FXAA_COMPUTE_LUMA
+#if FXAA_SHOW_EDGES && FXAA_COMPUTE_LUMA
 	float3 FXAAPS
 #else
 	float4 FXAAPS
@@ -238,7 +238,7 @@ void FXAAVS(in uint id : SV_VertexID,
 	return float4(0, 1, 0, debugLuma);
 #endif
 #else
-	if(lowDelta) discard;
+	if(lowDelta) return SampleColor(txc);
 /*============================================================================
 	Start!
 ----------------------------------------------------------------------------*/
@@ -330,17 +330,12 @@ void FXAAVS(in uint id : SV_VertexID,
 	float pixelOffset = (-dst / spanLength) + 0.5;
 /*--------------------------------------------------------------------------*/
 	bool pixelOffsetLTZero = pixelOffset < 0;
-	if(pixelOffsetLTZero || !goodSpan) discard;
+	if(pixelOffsetLTZero || !goodSpan) return SampleColor(txc);
 /*--------------------------------------------------------------------------*/
 	if(!horzSpan) posM.x += pixelOffset * lengthSign;
 	if( horzSpan) posM.y += pixelOffset * lengthSign;
 /*--------------------------------------------------------------------------*/
-	return SampleColor(posM)
-#if FXAA_COMPUTE_LUMA
-	.rgb;
-#else
-	;
-#endif
+	return SampleColor(posM);
 #endif // FXAA_SHOW_EDGES
 }
 /*==========================================================================*/
