@@ -44,7 +44,9 @@ namespace FXAA {
 /*============================================================================
 		LUMA COMPUTATION
 ============================================================================*/
-#define FXAA_COMPUTE_LUMA 1	 // 1: compute luma - 0: get luma from A channel.
+#ifndef FXAA_COMPUTE_LUMA
+	#define FXAA_COMPUTE_LUMA 1	 // 1: compute luma - 0: get luma from A channel.
+#endif
 
 /*============================================================================
 		SETUP
@@ -70,7 +72,7 @@ static const float EdgeThreshold = (10.0 - FXAA_EDGE_THRESHOLD) * 0.0625;
 #define SampleLumaOff(p, o)	GetLuma(tex2Dlodoffset(BackBuffer, tsp(p), o).rgb)
 /*--------------------------------------------------------------------------*/
 #else
-	#define Edges				float4(0,1,0,lumaM)
+	#define Edges				float4(0,1,0,SampleLuma(txc))
 	#define SampleLuma(p)			tex2Dlod(BackBuffer, tsp(p)).w
 	#define SampleLumaOff(p, o)		tex2Dlodoffset(BackBuffer, tsp(p), o).w
 	#if (__RENDERER__ == 0xb000 || __RENDERER__ == 0xb100)
@@ -190,7 +192,7 @@ void FXAAVS(in uint id : SV_VertexID,
 	pos = float4(txc * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
 }
 /*==========================================================================*/
-#if FXAA_COMPUTE_LUMA
+#if FXAA_SHOW_EDGES && FXAA_COMPUTE_LUMA
 	float3 FXAAPS
 #else
 	float4 FXAAPS
@@ -228,8 +230,7 @@ void FXAAVS(in uint id : SV_VertexID,
 	if(lowDelta) return SampleLuma(txc) * 0.9;
 	else return Edges;
 #else
-	if(lowDelta) discard;
-#endif
+	if(lowDelta) return SampleColor(txc);
 /*============================================================================
 	Start!
 ----------------------------------------------------------------------------*/
@@ -321,17 +322,13 @@ void FXAAVS(in uint id : SV_VertexID,
 	float pixelOffset = (-dst / spanLength) + 0.5;
 /*--------------------------------------------------------------------------*/
 	bool pixelOffsetLTZero = pixelOffset < 0;
-	if(pixelOffsetLTZero || !goodSpan) discard;
+	if(pixelOffsetLTZero || !goodSpan) return SampleColor(txc);
 /*--------------------------------------------------------------------------*/
 	if(!horzSpan) posM.x += pixelOffset * lengthSign;
 	if( horzSpan) posM.y += pixelOffset * lengthSign;
 /*--------------------------------------------------------------------------*/
-	return SampleColor(posM)
-#if FXAA_COMPUTE_LUMA
-	.rgb;
-#else
-	;
-#endif
+	return SampleColor(posM);
+#endif // FXAA_SHOW_EDGES
 }
 /*==========================================================================*/
 technique FAAA
